@@ -2,8 +2,9 @@ llm:
   provider: OLLAMA
 
   meta:
-    model: llama3
-    max_tokens: 4096
+    model: mistral
+    top_p: 0.9
+    max_tokens: 2048
     temperature: 0.2
 
   http_client:
