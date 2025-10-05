@@ -1,21 +1,23 @@
-name: AI Review
+name: 🤖 AI Review
 
 on:
   workflow_dispatch:
     inputs:
       review-command:
         type: choice
-        default: 'run'
+        default: "run"
         options: [ run, run-inline, run-context, run-summary ]
         required: true
-        description: 'Review command'
+        description: "AI Review command"
+
       pull-request-number:
         type: string
         required: true
-        description: 'Pull request number'
+        description: "Pull request number"
 
 jobs:
   ai-review:
+    name: Run AI Review
     runs-on: ubuntu-latest
 
     services:
@@ -24,36 +26,39 @@ jobs:
         ports: [ 11434:11434 ]
 
     steps:
-      - uses: actions/checkout@v4
+      - name: 🧱 Checkout repository
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Wait for Ollama to be ready
+      - name: ⏳ Wait for Ollama to start
         run: |
+          echo "Waiting for Ollama service to become ready..."
           for i in $(seq 1 30); do
             if curl -s http://localhost:11434/api/version; then
-              echo "✅ Ollama is up"
+              echo "✅ Ollama is ready."
               break
             fi
-            echo "⏳ Waiting for Ollama..."
+            echo "⏳ Attempt $i: still waiting..."
             sleep 3
           done
 
-      - name: Pull llama3 model
+      - name: 📦 Pull model
         run: |
-          echo "Downloading model llama3..."
+          echo "📥 Downloading model 'mistral'..."
           curl -X POST http://localhost:11434/api/pull \
             -H "Content-Type: application/json" \
-            -d '{"model": "llama3"}'
+            -d '{"model": "mistral"}'
 
-      - name: Warm up Llama3 model
+      - name: 🔥 Warm up model
         run: |
-          echo "🔥 Warming up llama3..."
-          curl -X POST http://localhost:11434/api/chat \
-           -H "Content-Type: application/json" \
-           -d '{"model":"llama3","stream":false,"messages":[{"role":"user","content":"Hello"}]}'
+          echo "🔥 Warming up model..."
+          curl -s -X POST http://localhost:11434/api/chat \
+            -H "Content-Type: application/json" \
+            -d '{"model":"mistral","stream":false,"messages":[{"role":"user","content":"Hello!"}]}'
+          echo "✅ Warm-up complete."
 
-      - name: Run AI Review
+      - name: 🚀 Run AI Review
         uses: Nikita-Filonov/ai-review@v0.27.0
         env:
           AI_REVIEW_CONFIG_FILE_YAML: ./configs/ai-review.yaml
@@ -62,5 +67,6 @@ jobs:
           VCS__PIPELINE__OWNER: ${{ github.repository_owner }}
           VCS__PIPELINE__REPO: ${{ github.event.repository.name }}
           VCS__PIPELINE__PULL_NUMBER: ${{ inputs.pull-request-number }}
+
         with:
           review-command: ${{ inputs.review-command }}
