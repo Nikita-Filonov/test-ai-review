@@ -39,12 +39,19 @@ jobs:
             sleep 3
           done
 
-      - name: Pull llama3 model via API
+      - name: Pull llama3 model
         run: |
           echo "Downloading model llama3..."
           curl -X POST http://localhost:11434/api/pull \
             -H "Content-Type: application/json" \
             -d '{"model": "llama3"}'
+
+      - name: Warm up Llama3 model
+        run: |
+          echo "🔥 Warming up llama3..."
+          curl -X POST http://localhost:11434/api/chat \
+           -H "Content-Type: application/json" \
+           -d '{"model":"llama3","stream":false,"messages":[{"role":"user","content":"Hello"}]}'
 
       - name: Run AI Review
         uses: Nikita-Filonov/ai-review@v0.27.0
