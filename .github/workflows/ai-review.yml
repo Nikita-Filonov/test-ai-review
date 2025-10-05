@@ -22,11 +22,6 @@ jobs:
       ollama:
         image: ollama/ollama:latest
         ports: [ 11434:11434 ]
-        options: >-
-          --health-cmd="curl -s http://localhost:11434/api/tags || exit 1"
-          --health-interval=5s
-          --health-timeout=2s
-          --health-retries=12
 
     steps:
       - uses: actions/checkout@v4
@@ -35,11 +30,12 @@ jobs:
 
       - name: Wait for Ollama to be ready
         run: |
-          for i in $(seq 1 20); do
-            if curl -s http://localhost:11434/api/tags; then
-              echo "Ollama ready"
+          for i in $(seq 1 30); do
+            if curl -s http://localhost:11434/api/version; then
+              echo "✅ Ollama is up"
               break
             fi
+            echo "⏳ Waiting for Ollama..."
             sleep 3
           done
 
