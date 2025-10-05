@@ -1,0 +1,59 @@
+name: Review with local Ollama via service
+
+on:
+  workflow_dispatch:
+    inputs:
+      review-command:
+        type: choice
+        default: 'run'
+        options: [ run, run-inline, run-context, run-summary ]
+        required: true
+        description: 'Review command'
+      pull-request-number:
+        type: string
+        required: true
+        description: 'Pull request number'
+
+jobs:
+  action:
+    runs-on: ubuntu-latest
+
+    services:
+      ollama:
+        image: ollama/ollama:latest
+        ports: [ 11434:11434 ]
+        options: >-
+          --health-cmd="curl -s http://localhost:11434/api/tags || exit 1"
+          --health-interval=5s
+          --health-timeout=2s
+          --health-retries=12
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Wait for Ollama to be ready
+        run: |
+          for i in $(seq 1 20); do
+            if curl -s http://localhost:11434/api/tags; then
+              echo "Ollama ready"
+              break
+            fi
+            sleep 3
+          done
+
+      - name: Pull model in service container
+        run: docker exec ${{ job.services.ollama.id }} ollama pull llama3
+
+      - name: Run ai-review using local LLM
+        uses: Nikita-Filonov/ai-review@v0.27.0
+        env:
+          AI_REVIEW_CONFIG_FILE_YAML: ./configs/ai-review.yaml
+
+          VCS__HTTP_CLIENT__API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VCS__PIPELINE__OWNER: ${{ github.repository_owner }}
+          VCS__PIPELINE__REPO: ${{ github.event.repository.name }}
+          VCS__PIPELINE__PULL_NUMBER: ${{ inputs.pull-request-number }}
+        with:
+          review-command: ${{ inputs.review-command }}
