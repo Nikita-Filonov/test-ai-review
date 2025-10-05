@@ -39,8 +39,12 @@ jobs:
             sleep 3
           done
 
-      - name: Pull model in service container
-        run: docker exec ${{ job.services.ollama.id }} ollama pull llama3
+      - name: Pull llama3 model via API
+        run: |
+          echo "Downloading model llama3..."
+          curl -X POST http://localhost:11434/api/pull \
+            -H "Content-Type: application/json" \
+            -d '{"model": "llama3"}'
 
       - name: Run AI Review
         uses: Nikita-Filonov/ai-review@v0.27.0
