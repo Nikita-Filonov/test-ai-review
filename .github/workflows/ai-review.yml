@@ -1,4 +1,4 @@
-name: Review with local Ollama via service
+name: AI Review
 
 on:
   workflow_dispatch:
@@ -46,7 +46,7 @@ jobs:
       - name: Pull model in service container
         run: docker exec ${{ job.services.ollama.id }} ollama pull llama3
 
-      - name: Run ai-review using local LLM
+      - name: Run AI Review
         uses: Nikita-Filonov/ai-review@v0.27.0
         env:
           AI_REVIEW_CONFIG_FILE_YAML: ./configs/ai-review.yaml
